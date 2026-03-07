@@ -9,7 +9,31 @@
             margin: 0;
             overflow: hidden;
             background: radial-gradient(circle at center, #1b0a2e, #05020a);
-            font-family: 'Arial', sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: white;
+        }
+
+        /* Lớp phủ chữ mở đầu */
+        #intro-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            background: #05020a;
+            transition: opacity 1s ease;
+        }
+
+        #intro-text {
+            font-size: 2.5rem;
+            color: #ff4d8d;
+            text-align: center;
+            text-shadow: 0 0 20px #ff4d8d;
+            font-weight: bold;
         }
 
         #sphere-container {
@@ -18,136 +42,144 @@
             left: 0;
             width: 100%;
             height: 100%;
-            display: none; /* Ẩn đi lúc đầu để hiện lời chúc */
-        }
-
-        /* Hiệu ứng chữ mở đầu */
-        #intro-text {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: #ff4d8d;
-            font-size: 3rem;
-            text-align: center;
-            text-shadow: 0 0 20px #ff4d8d;
-            z-index: 100;
+            z-index: 1;
         }
 
         .element {
-            width: 150px;
-            height: 150px;
-            box-shadow: 0 0 12px rgba(255, 182, 193, 0.8);
-            border: 2px solid rgba(255, 255, 255, 0.5);
-            border-radius: 5px;
-            transition: box-shadow 0.3s;
-        }
-
-        .element:hover {
-            box-shadow: 0 0 25px #ff4d8d;
+            width: 140px;
+            height: 180px;
+            box-shadow: 0 0 15px rgba(255, 77, 141, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            background: #222;
         }
 
         .element img {
             width: 100%;
             height: 100%;
             object-fit: cover;
+            border-radius: 8px;
         }
 
-        /* Bảng lời chúc cuối */
-        #final-message {
+        /* Lời chúc cuối */
+        #final-card {
             position: fixed;
-            bottom: 20%;
+            top: 50%;
             left: 50%;
-            transform: translateX(-50%);
-            background: rgba(255, 192, 203, 0.9);
-            padding: 20px;
-            border-radius: 15px;
-            display: none;
+            transform: translate(-50%, -50%) scale(0);
+            background: white;
+            color: #333;
+            padding: 30px;
+            border-radius: 20px;
             text-align: center;
-            width: 80%;
-            max-width: 400px;
-            box-shadow: 0 0 20px white;
-            z-index: 200;
+            z-index: 2000;
+            width: 85%;
+            max-width: 350px;
+            box-shadow: 0 0 30px rgba(255, 77, 141, 0.8);
+            transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        #final-card.show {
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        button {
+            background: #ff4d8d;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            margin-top: 15px;
         }
     </style>
 </head>
 <body>
 
-<div id="intro-text"></div>
-<div id="sphere-container"></div>
-
-<div id="final-message">
-    <h3>Gửi em yêu,</h3>
-    <p>Happy Women's Day! Cảm ơn em đã luôn bên anh. Chúc em luôn xinh đẹp, rạng rỡ và hạnh phúc bên anh nhé!</p>
-    <button onclick="this.parentElement.style.display='none'">❤️</button>
+<div id="intro-overlay">
+    <div id="intro-text">Đang tải...</div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<div id="sphere-container"></div>
+
+<div id="final-card">
+    <h2 style="color: #ff4d8d;">Happy Women's Day!</h2>
+    <p>Chúc em luôn xinh đẹp, hạnh phúc và rạng rỡ như những bông hoa. Yêu em rất nhiều! ❤️</p>
+    <button onclick="document.getElementById('final-card').classList.remove('show')">Đóng</button>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/renderers/CSS3DRenderer.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/TrackballControls.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
 
 <script>
-    const intro = document.getElementById('intro-text');
-    const container = document.getElementById('sphere-container');
-    const messages = ["Chúc mừng", "Ngày Quốc tế Phụ nữ", "Bé iu ❤️"];
+    const overlay = document.getElementById('intro-overlay');
+    const introText = document.getElementById('intro-text');
+    const messages = ["Chúc mừng", "Ngày Quốc tế Phụ nữ", "Gửi Bé iu của anh..."];
     
     let camera, scene, renderer, controls;
     let objects = [];
     let targets = { sphere: [] };
 
-    // 1. Hiệu ứng chữ chạy
-    async function runIntro() {
+    // BƯỚC 1: Hiệu ứng chữ chạy ngay khi mở web
+    async function startExperience() {
         for (let msg of messages) {
-            intro.innerText = msg;
-            intro.style.opacity = 0;
-            await fadeInOut(intro);
+            introText.style.opacity = 0;
+            await new Promise(r => setTimeout(r, 500));
+            introText.innerText = msg;
+            introText.style.opacity = 1;
+            introText.style.transition = 'opacity 0.8s';
+            await new Promise(r => setTimeout(r, 2000));
         }
-        intro.style.display = 'none';
-        container.style.display = 'block';
-        init();
+        
+        // Ẩn lớp phủ đen
+        overlay.style.opacity = 0;
+        setTimeout(() => overlay.style.display = 'none', 1000);
+        
+        // Khởi tạo 3D
+        init3D();
         animate();
     }
 
-    function fadeInOut(el) {
-        return new Promise(resolve => {
-            new TWEEN.Tween({opacity: 0}).to({opacity: 1}, 1000).onUpdate((obj) => el.style.opacity = obj.opacity).start()
-            .chain(new TWEEN.Tween({opacity: 1}).to({opacity: 0}, 1000).delay(1000).onUpdate((obj) => el.style.opacity = obj.opacity).onComplete(resolve));
-        });
-    }
-
-    function init() {
+    function init3D() {
         camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 1, 10000);
-        camera.position.z = 3000;
+        camera.position.z = 2500;
         scene = new THREE.Scene();
 
-        // Thay link ảnh thật của bạn vào đây
+        // Ảnh mẫu (Bạn nên thay bằng link ảnh thật của bạn)
         const images = [
-            "https://picsum.photos/400/400?1", "https://picsum.photos/400/400?2",
-            "https://picsum.photos/400/400?3", "https://picsum.photos/400/400?4"
+            "https://picsum.photos/300/400?random=1",
+            "https://picsum.photos/300/400?random=2",
+            "https://picsum.photos/300/400?random=3",
+            "https://picsum.photos/300/400?random=4"
         ];
 
-        const total = 80;
+        const total = 60; // Số lượng ảnh
         for (let i = 0; i < total; i++) {
-            let div = document.createElement('div');
+            const div = document.createElement('div');
             div.className = 'element';
-            let img = document.createElement('img');
+            
+            const img = document.createElement('img');
             img.src = images[i % images.length];
             div.appendChild(img);
 
-            let object = new THREE.CSS3DObject(div);
-            // Bắt đầu từ tâm (hiệu ứng nổ)
-            object.position.set(0, 0, 0);
+            const object = new THREE.CSS3DObject(div);
+            // Bắt đầu từ vị trí ngẫu nhiên rất xa để tạo hiệu ứng bay vào
+            object.position.x = Math.random() * 4000 - 2000;
+            object.position.y = Math.random() * 4000 - 2000;
+            object.position.z = Math.random() * 4000 - 2000;
+            
             scene.add(object);
             objects.push(object);
 
-            // Đích đến hình cầu
-            let phi = Math.acos(-1 + (2 * i) / total);
-            let theta = Math.sqrt(total * Math.PI) * phi;
-            let target = new THREE.Object3D();
+            // Tạo vị trí đích trên hình cầu
+            const phi = Math.acos(-1 + (2 * i) / total);
+            const theta = Math.sqrt(total * Math.PI) * phi;
+            const target = new THREE.Object3D();
             target.position.setFromSphericalCoords(800, phi, theta);
             
-            let vector = new THREE.Vector3();
+            const vector = new THREE.Vector3();
             vector.copy(target.position).multiplyScalar(2);
             target.lookAt(vector);
             targets.sphere.push(target);
@@ -155,25 +187,24 @@
 
         renderer = new THREE.CSS3DRenderer();
         renderer.setSize(window.innerWidth, window.innerHeight);
-        container.appendChild(renderer.domElement);
+        document.getElementById('sphere-container').appendChild(renderer.domElement);
 
         controls = new THREE.TrackballControls(camera, renderer.domElement);
         controls.rotateSpeed = 0.5;
 
-        // Chạy hiệu ứng nổ văng ra rồi thu lại
+        // Chuyển động vào hình cầu
         transform(targets.sphere, 3000);
         
-        // Hiện bảng lời chúc sau 8 giây
+        // Sau 7 giây hiện thư chúc
         setTimeout(() => {
-            document.getElementById('final-message').style.display = 'block';
-        }, 8000);
+            document.getElementById('final-card').classList.add('show');
+        }, 7000);
     }
 
-    function transform(targets, duration) {
-        TWEEN.removeAll();
+    function transform(targetArray, duration) {
         for (let i = 0; i < objects.length; i++) {
-            let object = objects[i];
-            let target = targets[i];
+            const object = objects[i];
+            const target = targetArray[i];
 
             new TWEEN.Tween(object.position)
                 .to({ x: target.position.x, y: target.position.y, z: target.position.z }, Math.random() * duration + duration)
@@ -191,158 +222,20 @@
         requestAnimationFrame(animate);
         TWEEN.update();
         controls.update();
-        scene.rotation.y += 0.003;
+        scene.rotation.y += 0.005; // Xoay chậm
         renderer.render(scene, camera);
     }
 
-    // Khởi chạy
-    runIntro();
-
     window.addEventListener('resize', () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
+        if(camera) {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
     });
-</script>
 
-</body>
-</html>}
-</style>
-
-</head>
-<body>
-
-<div id="sphere-container"></div>
-
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/renderers/CSS3DRenderer.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/TrackballControls.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
-
-<script>
-
-var camera, scene, renderer, controls;
-var objects = [];
-var targets = { sphere: [] };
-
-init();
-animate();
-
-function init(){
-
-camera = new THREE.PerspectiveCamera(40, window.innerWidth/window.innerHeight,1,10000);
-camera.position.z = 3000;
-
-scene = new THREE.Scene();
-
-var images=[
-"https://picsum.photos/400/400?1",
-"https://picsum.photos/400/400?2",
-"https://picsum.photos/400/400?3",
-"https://picsum.photos/400/400?4",
-"https://picsum.photos/400/400?5"
-];
-
-var total=120;
-
-for(let i=0;i<total;i++){
-
-let div=document.createElement("div");
-div.className="element";
-
-let img=document.createElement("img");
-img.src=images[i%images.length];
-
-div.appendChild(img);
-
-let object=new THREE.CSS3DObject(div);
-
-object.position.x=Math.random()*4000-2000;
-object.position.y=Math.random()*4000-2000;
-object.position.z=Math.random()*4000-2000;
-
-scene.add(object);
-objects.push(object);
-
-}
-
-var vector=new THREE.Vector3();
-var spherical=new THREE.Spherical();
-var radius=800;
-
-for(let i=0;i<objects.length;i++){
-
-let phi=Math.acos(-1+(2*i)/objects.length);
-let theta=Math.sqrt(objects.length*Math.PI)*phi;
-
-let obj=new THREE.Object3D();
-
-spherical.set(radius,phi,theta);
-obj.position.setFromSpherical(spherical);
-
-vector.copy(obj.position).multiplyScalar(2);
-obj.lookAt(vector);
-
-targets.sphere.push(obj);
-
-}
-
-renderer=new THREE.CSS3DRenderer();
-renderer.setSize(window.innerWidth,window.innerHeight);
-
-document.getElementById("sphere-container").appendChild(renderer.domElement);
-
-controls=new THREE.TrackballControls(camera,renderer.domElement);
-controls.rotateSpeed=0.5;
-
-transform(targets.sphere,2000);
-
-window.addEventListener("resize",onResize);
-
-}
-
-function transform(targets,duration){
-
-for(let i=0;i<objects.length;i++){
-
-let object=objects[i];
-let target=targets[i];
-
-new TWEEN.Tween(object.position)
-.to({x:target.position.x,y:target.position.y,z:target.position.z},duration)
-.easing(TWEEN.Easing.Exponential.InOut)
-.start();
-
-new TWEEN.Tween(object.rotation)
-.to({x:target.rotation.x,y:target.rotation.y,z:target.rotation.z},duration)
-.easing(TWEEN.Easing.Exponential.InOut)
-.start();
-
-}
-
-}
-
-function onResize(){
-
-camera.aspect=window.innerWidth/window.innerHeight;
-camera.updateProjectionMatrix();
-renderer.setSize(window.innerWidth,window.innerHeight);
-
-}
-
-function animate(){
-
-requestAnimationFrame(animate);
-
-TWEEN.update();
-controls.update();
-
-scene.rotation.y+=0.002;
-
-renderer.render(scene,camera);
-
-}
-
+    // Chạy ngay
+    startExperience();
 </script>
 
 </body>

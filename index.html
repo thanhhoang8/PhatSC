@@ -3,14 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Love Sphere - 8/3 Special</title>
+    <title>Galaxy Love - 8/3 Special</title>
     <style>
         body {
             margin: 0;
             overflow: hidden;
-            background: radial-gradient(circle at center, #1b0a2e, #05020a);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            color: white;
+            /* Nền tối sâu thẳm kết hợp với sắc tím galaxy */
+            background: radial-gradient(circle at center, #1a052d 0%, #05020a 100%);
+            font-family: 'Arial', sans-serif;
+        }
+
+        /* Hiệu ứng bụi sao (Starfield) */
+        #star-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
         }
 
         /* Lớp phủ chữ mở đầu */
@@ -25,16 +36,273 @@
             align-items: center;
             z-index: 1000;
             background: #05020a;
-            transition: opacity 1s ease;
+            transition: opacity 1.5s ease;
         }
 
         #intro-text {
-            font-size: 2.5rem;
-            color: #ff4d8d;
+            font-size: 2rem;
+            color: #ff8dc7;
             text-align: center;
-            text-shadow: 0 0 20px #ff4d8d;
+            text-shadow: 0 0 15px #ff4d8d;
             font-weight: bold;
+            opacity: 0;
+            transition: opacity 1s;
         }
+
+        #sphere-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        /* Tùy chỉnh khung ảnh giống video */
+        .element {
+            width: 120px;
+            height: 160px;
+            box-shadow: 0 0 15px rgba(255, 105, 180, 0.4);
+            border: 1.5px solid rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            background: #000;
+            transition: box-shadow 0.3s;
+        }
+
+        .element:hover {
+            box-shadow: 0 0 25px rgba(255, 105, 180, 0.8);
+            border: 1.5px solid rgba(255, 255, 255, 0.6);
+        }
+
+        .element img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 3px;
+        }
+
+        /* Thư chúc mừng */
+        #final-card {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            background: rgba(255, 255, 255, 0.95);
+            color: #333;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            z-index: 2000;
+            width: 80%;
+            max-width: 320px;
+            box-shadow: 0 0 40px rgba(255, 77, 141, 0.6);
+            transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        #final-card.show {
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        #final-card h2 { color: #d63384; margin-top: 0; }
+        
+        #final-card button {
+            background: #ff4d8d;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="star-canvas"></canvas>
+
+<div id="intro-overlay">
+    <div id="intro-text">Đang chuẩn bị điều bất ngờ...</div>
+</div>
+
+<div id="sphere-container"></div>
+
+<div id="final-card">
+    <h2>Happy Women's Day! 🌸</h2>
+    <p id="wish-text"></p>
+    <button onclick="location.reload()">Xem lại ❤️</button>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/renderers/CSS3DRenderer.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
+
+<script>
+    // --- 1. HIỆU ỨNG GALAXY BACKGROUND (Canvas) ---
+    const canvas = document.getElementById('star-canvas');
+    const ctx = canvas.getContext('2d');
+    let stars = [];
+    let meteors = [];
+
+    function initStars() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        stars = [];
+        for (let i = 0; i < 400; i++) {
+            stars.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                size: Math.random() * 1.5,
+                opacity: Math.random(),
+                speed: Math.random() * 0.05
+            });
+        }
+    }
+
+    function drawStars() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "white";
+        stars.forEach(s => {
+            ctx.globalAlpha = s.opacity;
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+            ctx.fill();
+            s.opacity += s.speed;
+            if (s.opacity > 1 || s.opacity < 0) s.speed = -s.speed;
+        });
+
+        // Sao băng ngẫu nhiên
+        if (Math.random() < 0.02) {
+            meteors.push({ x: Math.random() * canvas.width, y: 0, len: Math.random() * 80 + 20, speed: Math.random() * 10 + 5 });
+        }
+        meteors.forEach((m, i) => {
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.3)";
+            ctx.beginPath();
+            ctx.moveTo(m.x, m.y);
+            ctx.lineTo(m.x - m.len, m.y + m.len);
+            ctx.stroke();
+            m.x -= m.speed;
+            m.y += m.speed;
+            if (m.y > canvas.height) meteors.splice(i, 1);
+        });
+        requestAnimationFrame(drawStars);
+    }
+
+    // --- 2. HIỆU ỨNG CHỮ VÀ CHUYỂN CẢNH ---
+    const messages = ["Chào công chúa của anh...", "Hôm nay là ngày của em", "8/3 này, anh có một món quà..."];
+    async function startExperience() {
+        initStars();
+        drawStars();
+        
+        const introText = document.getElementById('intro-text');
+        for (let msg of messages) {
+            introText.innerText = msg;
+            introText.style.opacity = 1;
+            await new Promise(r => setTimeout(r, 2000));
+            introText.style.opacity = 0;
+            await new Promise(r => setTimeout(r, 800));
+        }
+        
+        document.getElementById('intro-overlay').style.opacity = 0;
+        setTimeout(() => {
+            document.getElementById('intro-overlay').style.display = 'none';
+            init3D();
+        }, 1500);
+    }
+
+    // --- 3. HIỆU ỨNG QUẢ CẦU ẢNH 3D ---
+    function init3D() {
+        const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 1, 10000);
+        camera.position.z = 3000;
+        const scene = new THREE.Scene();
+
+        // THAY LINK ẢNH CỦA BẠN VÀO ĐÂY
+        const images = [
+            "https://picsum.photos/300/400?random=11",
+            "https://picsum.photos/300/400?random=12",
+            "https://picsum.photos/300/400?random=13",
+            "https://picsum.photos/300/400?random=14",
+            "https://picsum.photos/300/400?random=15"
+        ];
+
+        const objects = [];
+        const total = 50; 
+
+        for (let i = 0; i < total; i++) {
+            const div = document.createElement('div');
+            div.className = 'element';
+            const img = document.createElement('img');
+            img.src = images[i % images.length];
+            div.appendChild(img);
+
+            const object = new THREE.CSS3DObject(div);
+            // Vị trí xuất phát ngẫu nhiên (hiệu ứng bay vào từ xa)
+            object.position.x = Math.random() * 4000 - 2000;
+            object.position.y = Math.random() * 4000 - 2000;
+            object.position.z = Math.random() * 4000 - 2000;
+            scene.add(object);
+            objects.push(object);
+
+            // Tính toán vị trí hình cầu
+            const phi = Math.acos(-1 + (2 * i) / total);
+            const theta = Math.sqrt(total * Math.PI) * phi;
+            const target = new THREE.Object3D();
+            target.position.setFromSphericalCoords(750, phi, theta);
+            
+            const vector = new THREE.Vector3();
+            vector.copy(target.position).multiplyScalar(2);
+            target.lookAt(vector);
+
+            // Tween chuyển động
+            new TWEEN.Tween(object.position)
+                .to({ x: target.position.x, y: target.position.y, z: target.position.z }, 2000 + Math.random() * 2000)
+                .easing(TWEEN.Easing.Exponential.InOut)
+                .start();
+
+            new TWEEN.Tween(object.rotation)
+                .to({ x: target.rotation.x, y: target.rotation.y, z: target.rotation.z }, 2000 + Math.random() * 2000)
+                .easing(TWEEN.Easing.Exponential.InOut)
+                .start();
+        }
+
+        const renderer = new THREE.CSS3DRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.getElementById('sphere-container').appendChild(renderer.domElement);
+
+        function animate() {
+            requestAnimationFrame(animate);
+            TWEEN.update();
+            scene.rotation.y += 0.003; // Quay chậm quả cầu
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // Hiện thư chúc mừng sau 6s
+        setTimeout(() => {
+            const card = document.getElementById('final-card');
+            const wish = "Chúc bé iu của anh một ngày 8/3 thật hạnh phúc, luôn rạng rỡ và xinh đẹp như những vì sao này nhé! Yêu em!";
+            card.classList.add('show');
+            
+            // Hiệu ứng đánh chữ (Typewriter)
+            let j = 0;
+            function typeWriter() {
+                if (j < wish.length) {
+                    document.getElementById("wish-text").innerHTML += wish.charAt(j);
+                    j++;
+                    setTimeout(typeWriter, 50);
+                }
+            }
+            typeWriter();
+        }, 6000);
+    }
+
+    window.addEventListener('resize', () => {
+        initStars();
+    });
+
+    startExperience();
+</script>
+</body>
+</html>        }
 
         #sphere-container {
             position: fixed;

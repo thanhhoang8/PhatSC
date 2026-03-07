@@ -3,38 +3,204 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Galaxy Love - 8/3 Special</title>
+    <title>Galaxy Love 8/3</title>
     <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-            /* Nền tối sâu thẳm kết hợp với sắc tím galaxy */
-            background: radial-gradient(circle at center, #1a052d 0%, #05020a 100%);
-            font-family: 'Arial', sans-serif;
-        }
-
-        /* Hiệu ứng bụi sao (Starfield) */
-        #star-canvas {
+        body { margin: 0; overflow: hidden; background: #05020a; font-family: 'Arial', sans-serif; }
+        
+        /* Hiệu ứng nền thiên hà */
+        #galaxy-canvas {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
             z-index: 0;
-            pointer-events: none;
         }
 
-        /* Lớp phủ chữ mở đầu */
         #intro-overlay {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: #000;
             display: flex;
             justify-content: center;
             align-items: center;
             z-index: 1000;
+            transition: opacity 1.5s;
+        }
+
+        #intro-text {
+            color: #ff4d8d;
+            font-size: 1.8rem;
+            text-align: center;
+            text-shadow: 0 0 15px #ff4d8d;
+            font-weight: bold;
+        }
+
+        .element {
+            width: 120px;
+            height: 160px;
+            box-shadow: 0 0 15px rgba(255, 105, 180, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 5px;
+            background: #222;
+        }
+
+        .element img { width: 100%; height: 100%; object-fit: cover; border-radius: 5px; }
+
+        #final-card {
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            background: rgba(255, 255, 255, 0.9);
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            z-index: 2000;
+            width: 280px;
+            box-shadow: 0 0 30px #ff4d8d;
+            transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        #final-card.show { transform: translate(-50%, -50%) scale(1); }
+        button { background: #ff4d8d; color: white; border: none; padding: 10px 20px; border-radius: 20px; cursor: pointer; margin-top: 15px; }
+    </style>
+</head>
+<body>
+
+<canvas id="galaxy-canvas"></canvas>
+
+<div id="intro-overlay">
+    <div id="intro-text">Đang khởi tạo không gian...</div>
+</div>
+
+<div id="sphere-container"></div>
+
+<div id="final-card">
+    <h2 style="color: #ff4d8d; margin-top:0;">Happy Women's Day!</h2>
+    <p id="wish" style="color: #333; line-height: 1.5;"></p>
+    <button onclick="location.reload()">Xem lại ❤️</button>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/renderers/CSS3DRenderer.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
+
+<script>
+    // 1. VẼ NỀN THIÊN HÀ (STARS & METEORS)
+    const canvas = document.getElementById('galaxy-canvas');
+    const ctx = canvas.getContext('2d');
+    let stars = [];
+
+    function initGalaxy() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        stars = Array.from({length: 300}, () => ({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            size: Math.random() * 1.5,
+            blink: Math.random() * 0.05
+        }));
+    }
+
+    function drawGalaxy() {
+        ctx.fillStyle = '#05020a';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        stars.forEach(s => {
+            ctx.fillStyle = `rgba(255, 255, 255, ${Math.abs(Math.sin(Date.now() * s.blink))})`;
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+            ctx.fill();
+        });
+        requestAnimationFrame(drawGalaxy);
+    }
+
+    // 2. CHỮ MỞ ĐẦU
+    async function start() {
+        initGalaxy();
+        drawGalaxy();
+        const intro = document.getElementById('intro-text');
+        const msgs = ["Gửi người con gái anh yêu...", "Thế giới của anh...", "Là em ❤️"];
+        
+        for(let m of msgs) {
+            intro.style.opacity = 0;
+            await new Promise(r => setTimeout(r, 500));
+            intro.innerText = m;
+            intro.style.opacity = 1;
+            await new Promise(r => setTimeout(r, 2000));
+        }
+        document.getElementById('intro-overlay').style.opacity = 0;
+        setTimeout(() => {
+            document.getElementById('intro-overlay').style.display = 'none';
+            init3D();
+        }, 1000);
+    }
+
+    // 3. QUẢ CẦU 3D
+    function init3D() {
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 1, 10000);
+        camera.position.z = 2800;
+
+        const renderer = new THREE.CSS3DRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.getElementById('sphere-container').appendChild(renderer.domElement);
+
+        const objects = [];
+        const total = 45;
+
+        for (let i = 0; i < total; i++) {
+            const div = document.createElement('div');
+            div.className = 'element';
+            const img = document.createElement('img');
+            // Sử dụng ảnh ngẫu nhiên để tránh bị đen
+            img.src = `https://picsum.photos/200/300?random=${i}`;
+            div.appendChild(img);
+
+            const obj = new THREE.CSS3DObject(div);
+            obj.position.set(Math.random()*4000-2000, Math.random()*4000-2000, Math.random()*4000-2000);
+            scene.add(obj);
+            objects.push(obj);
+
+            // Tọa độ hình cầu
+            const phi = Math.acos(-1 + (2 * i) / total);
+            const theta = Math.sqrt(total * Math.PI) * phi;
+            const target = new THREE.Object3D();
+            target.position.setFromSphericalCoords(800, phi, theta);
+            const v = new THREE.Vector3().copy(target.position).multiplyScalar(2);
+            target.lookAt(v);
+
+            // Hiệu ứng bay vào
+            new TWEEN.Tween(obj.position).to(target.position, 3000).delay(Math.random()*1000).easing(TWEEN.Easing.Exponential.InOut).start();
+            new TWEEN.Tween(obj.rotation).to(target.rotation, 3000).delay(Math.random()*1000).easing(TWEEN.Easing.Exponential.InOut).start();
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            TWEEN.update();
+            scene.rotation.y += 0.004;
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // Hiện thư
+        setTimeout(() => {
+            document.getElementById('final-card').classList.add('show');
+            const txt = "Chúc em ngày 8/3 thật ý nghĩa, luôn xinh đẹp và rạng rỡ. Anh sẽ luôn ở bên cạnh em!";
+            let i = 0;
+            function typing() {
+                if(i < txt.length) {
+                    document.getElementById('wish').innerHTML += txt.charAt(i);
+                    i++; setTimeout(typing, 50);
+                }
+            }
+            typing();
+        }, 6000);
+    }
+
+    window.addEventListener('resize', () => location.reload());
+    start();
+</script>
+</body>
+</html>            z-index: 1000;
             background: #05020a;
             transition: opacity 1.5s ease;
         }
